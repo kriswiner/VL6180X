@@ -24,10 +24,10 @@
  
  Hardware setup:
  Breakout Board --------- Arduino/Teensy
- 3V3 ---------------------- VIN
+ 3V3 ---------------------- VIN or any digital GPIO pin with digitalWrite(HIGH)!
  SDA -----------------------A4/17
  SCL -----------------------A5/16
- GND ---------------------- GND
+ GND ---------------------- GND or any digital GPIO pin with digitalWrite(LOW)!
  
  Note: The VL6180X breakout board is an I2C sensor and uses the Arduino Wire or Teensy i2c_t3.h library. 
  Even though the voltages up to 5 V, the sensor is not 5V tolerant and we are using a 3.3 V 8 MHz Pro Mini or a 3.3 V Teensy 3.1.
@@ -130,6 +130,8 @@ Adafruit_PCD8544 display = Adafruit_PCD8544(7, 6, 5, 3, 4);
   
 // Pin definitions
 int myLed = 13;
+int powerPin = 9;
+int gndPin   = 8;
 
 void setup()
 {
@@ -143,6 +145,11 @@ void setup()
   // Set up the interrupt pin, its set as active high, push-pull
   pinMode(myLed, OUTPUT);
   digitalWrite(myLed, LOW);
+  
+  pinMode(powerPin, OUTPUT);
+  digitalWrite(powerPin, HIGH);
+  pinMode(gndPin, OUTPUT);
+  digitalWrite(gndPin, LOW);
   
   display.begin(); // Initialize the display
   display.setContrast(58); // Set the contrast
@@ -247,13 +254,13 @@ void loop()
     Serial.print("range_status = "); Serial.println(range_status);
     uint8_t als_status = status & 0x38;    // extract als status component
     Serial.print("als_status = "); Serial.println(als_status);
-/*    
+    
     while(range_status != 0x04) { // wait for new range measurement ready status
     status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_INTERRUPT_STATUS_GPIO); 
     range_status = status & 0x07;
     delay(1);
     }
-*/    
+    
     // OK, range data is ready, get range
     uint8_t range = readByte(VL6180X_ADDRESS, VL6180X_RESULT_RANGE_VAL);
     
