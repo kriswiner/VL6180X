@@ -152,6 +152,7 @@ enum ALSGain {  // define lower nibble of ALS gain register
 uint8_t VL6180XMode = interLeaveMode;
 uint8_t ALSGain = alsGain20;
 float realalsGain;
+#define verboseMode  false
 
 void setup()
 {
@@ -243,19 +244,24 @@ void setup()
 void loop()
 {  
     uint8_t status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_INTERRUPT_STATUS_GPIO);  // read new sample data ready status register
+    if(verboseMode) {
     Serial.print("Status = "); Serial.println(status);
     
     // first check for damage or error
     if(status & 0x40) Serial.println("laser safety error!");
     if(status & 0x80) Serial.println("PLL1 or PLL2 error!");
     Serial.println("  ");
+    }
     
     if( !(status & 0x40) && !(status & 0x80) ) {
-    Serial.println("No errors...");
+    if(verboseMode) Serial.println("No errors...");
+    
     
     if(VL6180XMode == contRangeMode) {
     // Check error status
-    uint8_t error_status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_RANGE_STATUS);  
+    uint8_t error_status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_RANGE_STATUS); 
+    
+    if(verboseMode) {
     if(error_status & 0x00) Serial.println("No errors...");
     if(error_status & 0x10) Serial.println("VCSEL Continuity Test error!");
     if(error_status & 0x20) Serial.println("VCSEL Watchdog Test error!");
@@ -271,10 +277,11 @@ void loop()
     if(error_status & 0xE0) Serial.println("Ranging Algo Underflow error!");
     if(error_status & 0xF0) Serial.println("Ranging Algo Overflow error!");
     Serial.println("  ");
+    }
     
     // See if range new data is ready
     uint8_t range_status = status & 0x07;  // extract range status component
-    Serial.print("range_status = "); Serial.println(range_status);
+    if(verboseMode) {Serial.print("range_status = "); Serial.println(range_status);}
    
     while(range_status != 0x04) { // wait for new range measurement ready status
     status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_INTERRUPT_STATUS_GPIO); 
@@ -291,14 +298,18 @@ void loop()
     
     
     if (VL6180XMode == contALSMode) {
+
     // Check error status
     uint8_t error_status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_ALS_STATUS);  
+    
+    if(verboseMode) {
     if((error_status >> 4) & 0x00) Serial.println("No errors...");
     if((error_status >> 4) & 0x01) Serial.println("ALS  overflow error!");
     if((error_status >> 4) & 0x02) Serial.println("ALS underflow error!");
+    }
     
     uint8_t als_status = (status & 0x38) >> 3;    // extract als status component
-    Serial.print("als_status = "); Serial.println(als_status);
+    if(verboseMode) {Serial.print("als_status = "); Serial.println(als_status);}
     
     while(als_status != 0x04) { // wait for new als measurement ready status
     status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_INTERRUPT_STATUS_GPIO); 
@@ -310,22 +321,23 @@ void loop()
     readBytes(VL6180X_ADDRESS, VL6180X_RESULT_ALS_VAL, 2, &rawData[0]); // two-byte als data
     uint16_t alsraw = (uint16_t) (((uint16_t) rawData[0] << 8) | rawData[1]); //get 16-bit als raw value
     als = 0.32f * ((float) alsraw / realalsGain) * (100.0f/100.0f);  // convert to absolute lux
-    Serial.print("Current raw ambient light intensity is "); Serial.print(alsraw); Serial.println( " counts");  // print out ambient light intensity in lux
+    if(verboseMode) {Serial.print("Current raw ambient light intensity is "); Serial.print(alsraw); Serial.println( " counts"); } // print out ambient light intensity in lux
     Serial.print("Current ambient light intensity is "); Serial.print(als, 1); Serial.println( " lux");  // print out ambient light intensity in lux
 
     writeByte(VL6180X_ADDRESS, VL6180X_SYSTEM_INTERRUPT_CLEAR, 0x07);  // clear all data ready status interrupts
- 
-     }
+    }
  
     if (VL6180XMode == interLeaveMode) {
     // Check error status
     uint8_t error_status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_ALS_STATUS);  
+    if(verboseMode) {
     if((error_status >> 4) & 0x00) Serial.println("No errors...");
     if((error_status >> 4) & 0x01) Serial.println("ALS  overflow error!");
     if((error_status >> 4) & 0x02) Serial.println("ALS underflow error!");
+    }
     
     uint8_t als_status = (status & 0x38) >> 3;    // extract als status component
-    Serial.print("als_status = "); Serial.println(als_status);
+    if(verboseMode) {Serial.print("als_status = "); Serial.println(als_status);}
     
     while(als_status != 0x04) { // wait for new als measurement ready status
     status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_INTERRUPT_STATUS_GPIO); 
@@ -337,11 +349,12 @@ void loop()
     readBytes(VL6180X_ADDRESS, VL6180X_RESULT_ALS_VAL, 2, &rawData[0]); // two-byte als data
     uint16_t alsraw = (uint16_t) (((uint16_t) rawData[0] << 8) | rawData[1]); //get 16-bit als raw value
     als = 0.32f * ((float) alsraw / realalsGain) * (100.0f/100.0f);  // convert to absolute lux
-    Serial.print("Current raw ambient light intensity is "); Serial.print(alsraw); Serial.println( " counts");  // print out ambient light intensity in lux
+    if(verboseMode) {Serial.print("Current raw ambient light intensity is "); Serial.print(alsraw); Serial.println( " counts"); }  // print out ambient light intensity in lux
     Serial.print("Current ambient light intensity is "); Serial.print(als, 1); Serial.println( " lux");  // print out ambient light intensity in lux
   
-         // Check error status
+    // Check error status
     error_status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_RANGE_STATUS);  
+    if(verboseMode) {
     if(error_status & 0x00) Serial.println("No errors...");
     if(error_status & 0x10) Serial.println("VCSEL Continuity Test error!");
     if(error_status & 0x20) Serial.println("VCSEL Watchdog Test error!");
@@ -357,10 +370,11 @@ void loop()
     if(error_status & 0xE0) Serial.println("Ranging Algo Underflow error!");
     if(error_status & 0xF0) Serial.println("Ranging Algo Overflow error!");
     Serial.println("  ");
+    }
     
     // See if range new data is ready
     uint8_t range_status = status & 0x07;  // extract range status component
-    Serial.print("range_status = "); Serial.println(range_status);
+    if(verboseMode) {Serial.print("range_status = "); Serial.println(range_status);}
    
     while(range_status != 0x04) { // wait for new range measurement ready status
     status = readByte(VL6180X_ADDRESS, VL6180X_RESULT_INTERRUPT_STATUS_GPIO); 
@@ -467,15 +481,18 @@ writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_VHV_RECALIBRATE, 0x01); // perform t
 
 // Set Early Convergence Estimate for lower power consumption
 writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_MAX_CONVERGENCE_TIME, 0x32); // set max convergence time to 50 ms (steps of 1 ms)
-writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_RANGE_CHECK_ENABLES, 0x10 | 0x00);  // enable (0x01) early convergence estimate
+writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_RANGE_CHECK_ENABLES, 0x10 | 0x01);  // enable (0x01) early convergence estimate
 // This ECE is calculated as follows:
 // [(1 - % below threshold) x 0.5 x 15630]/ range max convergence time
 // This is ~123 ms for 50 ms max convergence time and 80% below threshold
-writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_EARLY_CONVERGENCE_ESTIMATE, 0x7B); // set early convergence estimate to 5%
+// This is a sixteen bit (2 byte) register with the first byte MSByte and the second LSByte
+writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_EARLY_CONVERGENCE_ESTIMATE, 0x00); // set early convergence estimate to 5%
+writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_EARLY_CONVERGENCE_ESTIMATE + 1, 0x7B); // set early convergence estimate to 5%
 
 // Configure ALS
 writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTERMEASUREMENT_PERIOD, 0x0A);   // set to 100 ms
-writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTEGRATION_PERIOD, 0x63);        // set ALS integration time to 100 ms in steps of 1 ms
+// Following is a 16-bit register with the first MSByte reserved
+writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTEGRATION_PERIOD + 1, 0x63);        // set ALS integration time to 100 ms in steps of 1 ms
 
 // The internal readout averaging sample period can be adjusted from 0 to 255. Increasing the sampling 
 // period decreases noise but also reduces the effective max convergence time and increases power consumption:
@@ -504,20 +521,24 @@ if(VL6180XMode == contRangeMode) {
 if(VL6180XMode == contALSMode) {
 // Configure ALS
   writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTERMEASUREMENT_PERIOD, 0x32);   // set to 100 ms
-  writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTEGRATION_PERIOD, 0x32);        // set ALS integration time to 50 ms in steps of 1 ms
+// Following is a 16-bit register with the first MSByte reserved
+  writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTEGRATION_PERIOD+1, 0x32);        // set ALS integration time to 50 ms in steps of 1 ms
   writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_START, 0x03);                     // start auto range mode
 }
 
 if(VL6180XMode == interLeaveMode) {
 // Configure ALS for interleaved mode at 10 Hz
-  writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTERMEASUREMENT_PERIOD, 0x0A);   // set to 100 ms
-  writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTEGRATION_PERIOD, 0x32);        // set ALS integration time to 50 ms in steps of 1 ms
-  writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_MAX_CONVERGENCE_TIME, 0x1E);    // set max convergence time to 30 ms
-writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_RANGE_CHECK_ENABLES, 0x10 | 0x00);  // enable (0x01) early convergence estimate
+  writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTERMEASUREMENT_PERIOD, 0x0A);       // set to 100 ms
+// Following is a 16-bit register with the first MSByte reserved
+  writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_INTEGRATION_PERIOD+1, 0x32);          // set ALS integration time to 50 ms in steps of 1 ms
+  writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_MAX_CONVERGENCE_TIME, 0x1E);        // set max convergence time to 30 ms
+  writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_RANGE_CHECK_ENABLES, 0x10 | 0x01);  // enable (0x01) early convergence estimate
 // This ECE is calculated as follows:
 // [(1 - % below threshold) x 0.5 x 15630]/ range max convergence time
 // This is ~72 ms for 30 ms max convergence time and 80% below threshold
-  writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_EARLY_CONVERGENCE_ESTIMATE, 0x48); // set early convergence estimate to 5%
+// This is a sixteen bit (2 byte) register with the first byte MSByte and the second LSByte
+  writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_EARLY_CONVERGENCE_ESTIMATE, 0x00); // set early convergence estimate to 5%
+  writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_EARLY_CONVERGENCE_ESTIMATE + 1, 0x48); // set early convergence estimate to 5%
   writeByte(VL6180X_ADDRESS, VL6180X_INTERLEAVED_MODE_ENABLE, 0x01);  // eanble interleave mode
   writeByte(VL6180X_ADDRESS, VL6180X_SYSALS_START, 0x03);  // start continuous als measurement mode
 // range read automatically performed immediately after each ALS measurement
@@ -571,4 +592,5 @@ writeByte(VL6180X_ADDRESS, VL6180X_SYSRANGE_RANGE_CHECK_ENABLES, 0x10 | 0x00);  
 	while (Wire.available()) {
         dest[i++] = Wire.read(); }            // Put read results in the Rx buffer
 }
+
 
