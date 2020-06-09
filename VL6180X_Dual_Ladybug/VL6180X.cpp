@@ -143,6 +143,8 @@ void VL6180X::init(uint8_t VL6180X_ADDRESS, uint8_t VL6180XMode, uint8_t ALSGain
     _i2c_bus->writeByte16(VL6180X_ADDRESS, 0x01ac, 0x3e);
     _i2c_bus->writeByte16(VL6180X_ADDRESS, 0x01a7, 0x1f);
     _i2c_bus->writeByte16(VL6180X_ADDRESS, 0x0030, 0x00);
+   
+    _i2c_bus->writeByte16(VL6180X_ADDRESS, VL6180X_SYSTEM_FRESH_OUT_OF_RESET, 0x00);  // clear fresh_out_of_reset bit
 
 // Configure range measurement for low power
 // Specify range measurement interval in units of 10 ms from 0 (= 10 ms) - 254 (= 2.55 s)
